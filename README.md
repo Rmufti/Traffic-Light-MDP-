@@ -24,3 +24,6 @@ While that (sumo_env) tag is visible, you are safe to install things. Any pip in
 deactivate
 ```
 
+# Other
+
+Important Link used for this project: https://github.com/LucasAlegre/sumo-rl
