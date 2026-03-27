@@ -45,3 +45,6 @@ export SUMO_HOME=$(which sumo | sed 's|/bin/sumo||')
 networks/: Contains .net.xml (road maps) and .rou.xml (traffic flows).
 src/main.py: The entry point to run simulations.
 sumo-rl/: The library used to wrap SUMO into an RL-compatible environment.
+
+## 5. GPT Document to Reference
+https://uwoca-my.sharepoint.com/:w:/g/personal/rmufti_uwo_ca/IQBIO46SkwGURLH-Q1ctly8SAajB2AabVzgWoClybi3AGf8?e=uJv4dq
