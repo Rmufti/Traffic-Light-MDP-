@@ -1,29 +1,47 @@
-# Traffic-Light-MDP-
+# 🚦 Traffic Light RL Optimization
 
-# Creating the venv
+This project uses Reinforcement Learning (Q-Learning) to optimize traffic light timings using the **SUMO** (Simulation of Urban MObility) engine and the **sumo-rl** Gymnasium wrapper.
 
-1. Create the Virtual Environment
-You only need to run this command once for the entire project. Open your terminal, navigate to the main folder where you want your project to live, and type:
+---
 
+## 🛠️ Prerequisites
+
+Before running the project, ensure you have the following installed on your system:
+
+1. **SUMO (Simulation of Urban MObility)**
+   - **macOS:** `brew install sumo`
+   - **Linux:** `sudo apt-get install sumo sumo-tools sumo-doc`
+   - **Windows:** Download the installer from the [SUMO website](https://eclipse.dev/sumo/).
+
+2. **Python 3.10+**
+   - It is highly recommended to use a virtual environment.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
 ```bash
-python -m venv sumo_env
+git clone <your-repo-url>
+cd Traffic_Light
 ```
 
-2. Activate (Enter) the Virtual Environment
-You need to run this command every time you open a new terminal window to work on your project or run your code.
-
+## 2. Set up Environment
 ```bash
-source sumo_env/bin/activate
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-3. Work Inside the Environment
-While that (sumo_env) tag is visible, you are safe to install things. Any pip install command you run will strictly download into this isolated folder, not your entire computer.
+## 3.Environment Variables
+You must tell your system where SUMO is located. Add this to your .zshrc or .bashrc, or run it in your terminal before executing scripts:
 
-4. Deactivate (Exit) the Virtual Environment
-```bash
-deactivate
+```Bash
+export SUMO_HOME=$(which sumo | sed 's|/bin/sumo||')
+# On macOS Homebrew, it's usually: /opt/homebrew/opt/sumo/share/sumo
 ```
 
-# Other
-
-Important Link used for this project: https://github.com/LucasAlegre/sumo-rl
+## 4. Project Structure
+networks/: Contains .net.xml (road maps) and .rou.xml (traffic flows).
+src/main.py: The entry point to run simulations.
+sumo-rl/: The library used to wrap SUMO into an RL-compatible environment.
