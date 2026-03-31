@@ -3,8 +3,8 @@ Generate comparison graphs from evaluation results.
 
 Reads:
   outputs/evaluation_results.csv
-  outputs/dqn_standard_metrics.csv
   outputs/dqn_custom_metrics.csv
+  outputs/ppo_custom_metrics.csv
 
 Produces (all saved to outputs/):
   1. waiting_time_comparison.png
@@ -31,16 +31,16 @@ base_dir = os.path.dirname(script_dir)
 out_dir = os.path.join(base_dir, 'outputs')
 
 eval_csv = os.path.join(out_dir, 'evaluation_results.csv')
-dqn_std_csv = os.path.join(out_dir, 'dqn_standard_metrics.csv')
 dqn_cust_csv = os.path.join(out_dir, 'dqn_custom_metrics.csv')
+ppo_cust_csv = os.path.join(out_dir, 'ppo_custom_metrics.csv')
 
 # Style
 plt.style.use('seaborn-v0_8-darkgrid')
 COLORS = {
-    'Random': '#e74c3c',
-    'Q-Learning': '#f39c12',
-    'DQN_Standard': '#3498db',
-    'DQN_Custom': '#2ecc71',
+    'Random': '#e74c3c',         # Red
+    'Q-Learning': '#f39c12',     # Orange
+    'DQN_Custom': '#2ecc71',     # Green
+    'PPO_Custom': '#9b59b6',     # Purple
 }
 
 # ---------------------------------------------------------------------------
@@ -51,8 +51,15 @@ if not os.path.exists(eval_csv):
     sys.exit(1)
 
 df = pd.read_csv(eval_csv)
+
+# ---------------------------------------------------------------------------
+# STRICT FILTER: Only plot the 4 requested models!
+# ---------------------------------------------------------------------------
+allowed_models = ['Random', 'Q-Learning', 'DQN_Custom', 'PPO_Custom']
+df = df[df['model'].isin(allowed_models)]
+
 models = df['model'].unique()
-print(f"Models found: {list(models)}")
+print(f"Models filtered for evaluation plots: {list(models)}")
 
 # Compute mean across episodes for each (model, step)
 grouped = df.groupby(['model', 'step']).agg(
@@ -169,16 +176,10 @@ plt.close(fig)
 
 
 # ---------------------------------------------------------------------------
-# 5. Training Curve (DQN Standard vs Custom over episodes)
+# 5. Training Curve (DQN vs PPO over episodes)
 # ---------------------------------------------------------------------------
 fig, ax = plt.subplots(figsize=(8, 5))
 has_curve = False
-
-if os.path.exists(dqn_std_csv):
-    std = pd.read_csv(dqn_std_csv)
-    ax.plot(std['episode'], std['avg_waiting_time'], 'o-',
-            label='DQN Standard', color=COLORS['DQN_Standard'], linewidth=2, markersize=8)
-    has_curve = True
 
 if os.path.exists(dqn_cust_csv):
     cust = pd.read_csv(dqn_cust_csv)
@@ -186,10 +187,16 @@ if os.path.exists(dqn_cust_csv):
             label='DQN Custom', color=COLORS['DQN_Custom'], linewidth=2, markersize=8)
     has_curve = True
 
+if os.path.exists(ppo_cust_csv):
+    ppo = pd.read_csv(ppo_cust_csv)
+    ax.plot(ppo['episode'], ppo['avg_waiting_time'], '^-',
+            label='PPO Custom', color=COLORS['PPO_Custom'], linewidth=2, markersize=8)
+    has_curve = True
+
 if has_curve:
     ax.set_xlabel('Training Episode', fontsize=13)
     ax.set_ylabel('Avg Waiting Time (s)', fontsize=13)
-    ax.set_title('DQN Training Curve — Standard vs Custom Reward', fontsize=14, fontweight='bold')
+    ax.set_title('Training Curve Comparison — DQN vs PPO', fontsize=14, fontweight='bold')
     ax.legend(fontsize=11)
     ax.set_ylim(bottom=0)
     fig.tight_layout()
