@@ -30,8 +30,17 @@ class qLearningAgent:
     def decay_exploration(self):
         self.exploration_rate *= self.exploration_decay
     def plot_q_values(self):
-        states = set(state for state, action in self.q_table.keys())
-        actions = set(action for state, action in self.q_table.keys())
+        # 1. SORT the states and actions (Crucial for consistency!)
+        # Using a set() scrambles the order every time. Sorting ensures 
+        # the rows and columns stay in the same place across different runs.
+        states = sorted(list(set(state for state, action in self.q_table.keys())))
+        actions = sorted(list(set(action for state, action in self.q_table.keys())))
+        
+        # Safety check in case you call it before training
+        if not states or not actions:
+            print("Q-table is empty. Nothing to plot.")
+            return
+
         q_matrix = np.zeros((len(states), len(actions)))
         
         state_to_index = {state: idx for idx, state in enumerate(states)}
@@ -42,11 +51,33 @@ class qLearningAgent:
             a_idx = action_to_index[action]
             q_matrix[s_idx, a_idx] = q_value
         
-        plt.imshow(q_matrix, cmap='viridis')
-        plt.colorbar(label='Q-value')
-        plt.xlabel('Actions')
-        plt.ylabel('States')
-        plt.title('Q-values Heatmap')
-        plt.show()
-
+        # 2. Make the figure larger and higher quality
+        plt.figure(figsize=(10, 8), dpi=100)
+        
+        # 'aspect=auto' prevents the plot from looking squished if you have 
+        # way more states than actions (which is common in traffic RL)
+        im = plt.imshow(q_matrix, cmap='viridis', aspect='auto', interpolation='nearest')
+        
+        # Format the colorbar
+        cbar = plt.colorbar(im)
+        cbar.set_label('Expected Future Reward (Q-Value)', rotation=270, labelpad=20, fontsize=12)
+        
+        # 3. Clean up the titles and labels
+        plt.xlabel('Traffic Light Actions', fontsize=12, fontweight='bold', labelpad=10)
+        plt.ylabel('Discretized Traffic States', fontsize=12, fontweight='bold', labelpad=10)
+        plt.title('Agent Learning: Q-Table Heatmap', fontsize=16, fontweight='bold', pad=20)
+        
+        # 4. Handle tick marks smartly
+        plt.xticks(ticks=np.arange(len(actions)), labels=actions)
+        
+        # If the state space grows massive, plotting 500 y-ticks becomes a black smear.
+        # This hides them if there are too many, keeping it clean.
+        if len(states) > 25:
+            plt.yticks([]) 
+            plt.ylabel(f'Discretized Traffic States ({len(states)} unique states)', fontsize=12, fontweight='bold')
+        else:
+            plt.yticks(ticks=np.arange(len(states)), labels=[str(s) for s in states], fontsize=8)
             
+        # Ensures labels don't get cut off on the edges
+        plt.tight_layout() 
+        plt.show()
