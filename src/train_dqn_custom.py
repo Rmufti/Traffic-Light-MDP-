@@ -1,6 +1,6 @@
 """
 Train a DQN agent on the single-intersection traffic light environment
-using a CUSTOM reward: -(waiting_time + 0.5 * lane_queue_variance).
+using a CUSTOM reward: -(waiting_time + alpha * lane_queue_variance).
 
 This penalises both high total wait AND imbalanced lanes (the project's
 core contribution).
@@ -35,7 +35,9 @@ def balanced_reward(traffic_signal):
     total_queued = sum(lane_halting)
     lane_variance = float(np.var(lane_halting)) if len(lane_halting) > 0 else 0.0
 
-    alpha = 0.5
+    # SCALED DOWN ALPHA: 0.05 prevents the neural network from obsessing 
+    # over variance and ignoring the actual queue length.
+    alpha = 0.05
     return -(total_queued + alpha * lane_variance)
 
 
@@ -56,7 +58,8 @@ os.makedirs(os.path.join(base_dir, 'models'), exist_ok=True)
 # ---------------------------------------------------------------------------
 # Training parameters
 # ---------------------------------------------------------------------------
-NUM_EPISODES = 5
+# INCREASED EPISODES: Neural Networks need massive amounts of data to converge!
+NUM_EPISODES = 200
 NUM_SECONDS = 3600
 DELTA_TIME = 5
 MAX_STEPS_PER_EP = NUM_SECONDS // DELTA_TIME
@@ -118,7 +121,8 @@ for episode in range(1, NUM_EPISODES + 1):
             buffer_size=50000,
             learning_starts=100,
             target_update_interval=500,
-            exploration_fraction=0.3,
+            # INCREASED EXPLORATION: Spend 50% of the 200 episodes exploring
+            exploration_fraction=0.5,
             exploration_final_eps=0.02,
             batch_size=64,
             verbose=0,

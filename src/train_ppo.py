@@ -1,6 +1,6 @@
 """
 Train a PPO agent on the single-intersection traffic light environment
-using a CUSTOM reward: -(waiting_time + 0.5 * lane_queue_variance).
+using a CUSTOM reward: -(waiting_time + alpha * lane_queue_variance).
 
 Usage: python src/train_ppo_custom.py
 """
@@ -13,12 +13,9 @@ from stable_baselines3.common.callbacks import BaseCallback
 from sumo_rl import SumoEnvironment
 
 # ---------------------------------------------------------------------------
-# Custom reward function (Identical to DQN for fair comparison)
+# Custom reward function
 # ---------------------------------------------------------------------------
 def balanced_reward(traffic_signal):
-    """
-    Reward = -(total_queued + alpha * variance_of_per_lane_queues)
-    """
     lane_halting = [
         traffic_signal.sumo.lane.getLastStepHaltingNumber(lane)
         for lane in traffic_signal.lanes
@@ -26,9 +23,9 @@ def balanced_reward(traffic_signal):
     total_queued = sum(lane_halting)
     lane_variance = float(np.var(lane_halting)) if len(lane_halting) > 0 else 0.0
 
-    alpha = 0.5
+    # Scaled down to match DQN
+    alpha = 0.05
     return -(total_queued + alpha * lane_variance)
-
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -39,7 +36,6 @@ base_dir = os.path.dirname(script_dir)
 net_file = os.path.join(base_dir, 'networks', 'simple', 'single-intersection.net.xml')
 route_file = os.path.join(base_dir, 'networks', 'simple', 'single-intersection-vhvh.rou.xml')
 
-# Updated paths for PPO
 model_save_path = os.path.join(base_dir, 'models', 'ppo_custom')
 csv_save_path = os.path.join(base_dir, 'outputs', 'ppo_custom_metrics.csv')
 
@@ -49,13 +45,14 @@ os.makedirs(os.path.join(base_dir, 'models'), exist_ok=True)
 # ---------------------------------------------------------------------------
 # Training parameters
 # ---------------------------------------------------------------------------
-NUM_EPISODES = 5
+# INCREASED EPISODES
+NUM_EPISODES = 200
 NUM_SECONDS = 3600
 DELTA_TIME = 5
 MAX_STEPS_PER_EP = NUM_SECONDS // DELTA_TIME
 
 # ---------------------------------------------------------------------------
-# Callback (Identical to DQN)
+# Callback 
 # ---------------------------------------------------------------------------
 class EpisodeMetricsCallback(BaseCallback):
     def __init__(self, verbose=0):
@@ -78,7 +75,6 @@ class EpisodeMetricsCallback(BaseCallback):
         self.episode_queues = []
         self.episode_speeds = []
         self.step_in_ep = 0
-
 
 # ---------------------------------------------------------------------------
 # Main
@@ -104,14 +100,13 @@ for episode in range(1, NUM_EPISODES + 1):
     )
 
     if episode == 1:
-        # PPO Initialization (Replaces DQN)
         model = PPO(
             "MlpPolicy",
             env,
-            learning_rate=3e-4, # Standard PPO learning rate
-            n_steps=MAX_STEPS_PER_EP, # Update the policy at the end of every episode
-            batch_size=64,
-            ent_coef=0.01, # Encourages exploration (similar to epsilon in DQN)
+            learning_rate=3e-4, 
+            n_steps=MAX_STEPS_PER_EP, # 720 steps
+            batch_size=120,           # 720 divides perfectly by 120
+            ent_coef=0.01, 
             verbose=0,
         )
     else:
